@@ -1,0 +1,182 @@
+<html>
+<head>
+</head>
+<body>
+
+<div>
+	<div>Location: <span id="room"></div>
+	<ul id="go">Go:</ul>
+	<ul id="items">Items:<ul>
+</div>
+
+<script
+  src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
+  crossorigin="anonymous">
+</script>
+<script>
+
+var Player = function(info) {
+	this.name = info.name;
+	this.weight = info.weight;
+	this.capacity = 10;
+	this.inventory = [];
+	this.load = 0;
+};
+var Item = function(info, specs) {
+	var self = this;
+	this.name = info.name;
+	this.weight = info.weight;
+	this.canInteract = specs.interact;
+	this.canPickup = specs.pickUp;
+	this.pickUp = function(player) {
+		if(this.canPickup) {
+			if(player.load + this.weight >= player.capacity) {
+				console.log('Not enough space in your inventory to add this item.');
+			} else {
+				console.log(this.name + ' has been added to your inventory.');
+				player.inventory.push(this);
+				player.load += this.weight;
+
+				var items = document.getElementsByClassName('item');
+//				console.log(items);
+//				console.log(self.name);
+				for(var i = 0; i < items.length; i++) {
+					if(items[i].innerHTML == self.name) {
+//						console.log('Match Found: ' + items[i].innerHTML);
+						items[i].remove();
+	
+						currentRoom.options.items.forEach(function(item) {
+							if(item.name == self.name) {
+								var index = currentRoom.options.items.indexOf(item);
+								currentRoom.options.items.splice(index, 1);
+								console.log(currentRoom.options.items);
+							}
+						});
+					}
+				}
+			}
+		} else {
+			console.log(this.name + ' cannot be added to your inventory.');
+		}
+	};
+};
+
+var Place = function(name, options) {
+	this.name = name;
+	this.options = {
+		items: options.items,
+		go: options.go,
+		interactions: options.iteractions
+	};
+};
+
+var currentRoom;
+var currentLocation = [];
+var locations = {
+	currentLocations: [],
+	changeLocation: function(location) {
+		$('#room').text(location.name);
+		$('#go').empty();
+		location.options.go.forEach(function(place) {
+			var li = $('<li>');
+			li.text(place.name);
+			li.attr({
+				'data-name': place.name,
+				'class': 'place'
+			});
+			$('#go').append(li);
+		});
+		$('#items').empty();
+		console.log(location.options.items);
+
+		if(location.options.items) {
+			location.options.items.forEach(function(item) {
+				var li = $('<li>');
+				li.text(item.name);
+				li.attr({
+					'data-name': item.name,
+					'class': 'item'
+				});
+				$('#items').append(li);
+//				console.log(item.name);
+			});
+		} else {
+			var li = $('<li>');
+			li.html('<i>No items found</i>');
+			$('#items').append(li);
+		}
+		currentRoom = location;
+	}
+}
+
+var player = new Player({name: 'Player 1', weight: 175});
+var desk = new Item({name: 'desk', weight: 50}, {interact: true, pickUp: false});
+var bed = new Item({name: 'bed', weight: 150}, {interact: true, pickUp: false});
+var table = new Item({name: 'table', weight: 100}, {interact: true, pickup: false});
+var dirtyShirt = new Item({name: 'dirty shirt', weight: 1}, {interact: false, pickUp: true});
+
+var village = new Place('Village', {items: null, go: []});
+var kitchen = new Place('Kitchen', {items: [table], go: []});
+var startingRoom = new Place('My Room', {items: [desk, bed, dirtyShirt], go: [kitchen]});
+
+locations.currentLocations.push(startingRoom, kitchen, village);
+
+village.options.go.push(kitchen);
+kitchen.options.go.push(startingRoom, village);
+
+function changeRoom(room) {
+	$('#room').text(room.name);
+	$('#go').empty();
+	room.options.go.forEach(function(place) {
+		var li = $('<li>');
+		li.text(place.name);
+		li.attr({
+			'data-name': place.name,
+			'class': 'place'
+		});
+		$('#go').append(li);
+	});
+	$('#items').empty();
+	room.options.items.forEach(function(item) {
+		var li = $('<li>');
+		li.text(item.name);
+		li.attr({
+			'data-name': item.name,
+			'class': 'item'
+		});
+		$('#items').append(li);
+		console.log(item.name);
+	});
+	currentRoom = room;
+}
+
+$(document).on('click', '.item', function() {
+//	alert('You clicked ' + $(this).data('name'));
+	var item = $(this).data('name');
+//	currentRoom.options.items[item].pickUp(player);
+	console.log(currentRoom.options.items);
+	currentRoom.options.items.forEach(function(index){
+		if(item == index.name) {
+			index.pickUp(player);
+			return;
+		}
+	});
+	
+});
+
+$(document).on('click', '.place', function() {
+	var place = $(this).data('name');
+	locations.currentLocations.forEach(function(location) {
+		if(location.name == place) {
+			locations.changeLocation(location);
+		}
+	});
+	
+});
+locations.changeLocation(startingRoom);
+
+
+</script>
+</body>
+</html>
